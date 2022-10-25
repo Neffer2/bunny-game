@@ -1,10 +1,11 @@
-
+let rabbit;
+let possibleMoves = [570, 530, 485, 435, 385, 315, 265, 210, 165, 105, 65];
 class MainScene extends Phaser.Scene {
     constructor(){
         super('gameScene');
     } 
 
-    preload(){
+    preload(){ 
         /* Tilemap */
             this.load.image('gameTiles', './assets/img/tilemap.png');  
             this.load.tilemapTiledJSON('tilemap', './assets/img/tilemap-bunnygame.json');
@@ -31,9 +32,36 @@ class MainScene extends Phaser.Scene {
         map.createLayer('YellowLine', tileset);
         map.createLayer('GrayRace', tileset);
         map.createLayer('WhiteLine', tileset);
+
+        rabbit = this.physics.add.sprite(200, 576, 'rabbit', 24);
+
+        /* Animations */
+        this.anims.create({
+            key: 'Up',
+            frames: this.anims.generateFrameNumbers('rabbit', {start: 25, end: 32}),
+            framerate: 8,
+            repeat: 0
+        });
+
+        this.anims.create({
+            key: 'Down',
+            frames: this.anims.generateFrameNumbers('rabbit', {start: 8, end: 15}),
+            framerate: 8,
+            repeat: 0
+        });
+        /* --- */
     }
 
     update(){
+        let scanner = this.input.keyboard.createCursorKeys();
+
+        if (scanner.up.isDown){
+            rabbit.anims.play('Up', false);
+            rabbit.y = 530;
+        }else if (scanner.down.isDown){
+            rabbit.anims.play('Down', false);
+            rabbit.y = 32;
+        }
     }
 }
 
@@ -52,7 +80,7 @@ const config = {
         default: 'arcade',
         arcade: {
             debug: true,
-            gravity: { y: 350 }
+            // gravity: { y: 350 }
         }
     }
 }
