@@ -331,6 +331,8 @@ class EndScene extends Phaser.Scene {
         backZone.once('pointerdown', () => {
             lives = 3;
             countdown = 60;
+            difficulty = 1;
+            rabbit.score = 0;
             this.scene.start("gameScene");
         });
     }
