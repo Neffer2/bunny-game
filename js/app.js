@@ -9,12 +9,21 @@ let scoreTable;
 let countdown = 60;
 let countdownText;
 let countdownTable;
+let lives = 3;
+let livesText;
+let livesTable;
 let LeftVehicles;
 let RightVehicles;
 let LeftLimit;
 let RightLimit;
 let LeftCarriles = [485, 165];
 let RightCarriles = [385, 265];
+let difficulty = 1; 
+
+
+// End
+let endScore = 0; 
+
 class MainScene extends Phaser.Scene {
     constructor(){
         super('gameScene');
@@ -85,6 +94,18 @@ class MainScene extends Phaser.Scene {
             });
         /* */
 
+        /* Lives */
+            livesTable = this.add.graphics();
+            livesTable.fillStyle(0x0000, 1);
+            //  32px radius on the corners
+            livesTable.fillRoundedRect(545, 605, 90, 40, 1);
+
+            livesText = this.add.text(555, 615, "❤❤❤",{
+                font: '24px Courier',
+                fill: '#00ff00'
+            });
+        /* */
+
         const Interval = setInterval(() => {
             countdown--;
             if (countdown > 9){
@@ -99,8 +120,7 @@ class MainScene extends Phaser.Scene {
                     delay: 500,
                     loop: false,
                     callback: () => {
-                        alert('Juego terminado');
-                        // this.scene.start("endScene");
+                        this.scene.start("endScene");
                     } 
                 });    
             }
@@ -109,17 +129,16 @@ class MainScene extends Phaser.Scene {
         /* Cars */
             LeftVehicles = this.physics.add.group();
             RightVehicles = this.physics.add.group();
-            LeftVehicles.create(-100, LeftCarriles[0], 'cars', this.getCars(0 ,9)).setVelocityX(this.getVelocity()).setSize(135, 60, false);
-            LeftVehicles.create(-100, LeftCarriles[1], 'cars2', this.getCars(0 ,24)).setVelocityX(this.getVelocity()).setSize(135, 60, true);
-
+            LeftVehicles.create(-100, LeftCarriles[0], 'cars', this.getCars(0 ,9)).setVelocityX(this.getVelocity()).setSize(135, 60, false).carril = 0;
+            LeftVehicles.create(-100, LeftCarriles[1], 'cars2', this.getCars(0 ,24)).setVelocityX(this.getVelocity()).setSize(135, 60, true).carril = 1;
             
-            RightVehicles.create(900, RightCarriles[0], 'motorcycles', this.getCars(0 ,3)).setVelocityX(-this.getVelocity()).setSize(135, 60, false).flipX = true;
-            RightVehicles.create(900, RightCarriles[1], 'cars2', this.getCars(0 ,24)).setVelocityX(-this.getVelocity()).setSize(135, 60, true).flipX = true;
+            RightVehicles.create(900, RightCarriles[0], 'motorcycles', this.getCars(0 ,3)).setVelocityX(-this.getVelocity()).setSize(135, 60, false).setFlipX(true).carril = 0;
+            RightVehicles.create(900, RightCarriles[1], 'cars2', this.getCars(0 ,24)).setVelocityX(-this.getVelocity()).setSize(135, 60, true).setFlipX(true).carril = 1;
         /*  */
 
         /* Limits */
-            LeftLimit = this.add.rectangle(-30, 340, 50, 680, 0x0000);
-            RightLimit = this.add.rectangle(800, 340, 50, 680, 0x0000);
+            LeftLimit = this.add.rectangle(-130, 340, 50, 680, 0x0000);
+            RightLimit = this.add.rectangle(930, 340, 50, 680, 0x0000);
 
             this.physics.add.existing(LeftLimit);
             this.physics.add.existing(RightLimit);
@@ -146,6 +165,8 @@ class MainScene extends Phaser.Scene {
 
         /* Colitions */
             this.physics.add.overlap(rabbit, carrots, rabbitCollecRabit, null, this);
+            this.physics.add.overlap(rabbit, LeftVehicles, substractLives, null, this);
+            this.physics.add.overlap(rabbit, RightVehicles, substractLives, null, this);
 
             this.physics.add.collider(RightLimit, LeftVehicles, this.LeftVehicleLimit, null, this);
             this.physics.add.overlap(LeftLimit, RightVehicles, this.RightVehicleLimit, null, this);
@@ -154,19 +175,69 @@ class MainScene extends Phaser.Scene {
         /** functions */
             function rabbitCollecRabit(rabbit, carrots) {
                 score.setText(rabbit.score++);
-                console.log(rabbit.score);
+                endScore = rabbit.score;
+                if (rabbit.score % 5 === 0){
+                    difficulty++;
+                }
+
                 carrots.disableBody(true, true);
                 // Enable in random position
                 let y = Math.floor(Math.random() * possibleMoves.length + 1);
                     // Reset, x, y, physics, visible
                 carrots.enableBody(true, 200, possibleMoves[y], true, true);
             }
+
+            function substractLives (){
+                rabbit.y = 524;
+                moveCounter = 0;
+                /*******/
+                if (lives == 0){
+                    clearInterval(Interval);
+                    this.time.addEvent({
+                        delay: 500,
+                        loop: false,
+                        callback: () => {
+                            this.scene.start("endScene");
+                        } 
+                    });    
+                }
+                lives--;
+                let strLives = "";
+                let cont = 0;
+                while(cont < lives){
+                    strLives += "❤";
+                    cont++;
+                }
+                livesText.setText(strLives);
+            }   
         /** */
     }
 
-    getVelocity(){
-        let min = 160;
-        let max = 300;
+    getVelocity(){        
+        let min = 0;
+        let max = 0;
+        switch (difficulty){
+            case 1:
+                min = 160;
+                max = 250;
+                break;
+            case 2:
+                min = 340;
+                max = 430;
+                break;
+            case 3:
+                min = 520;
+                max = 610;
+                break;
+            case 4:
+                min = 700;
+                max = 790;
+                break;
+            default:
+                min = 880;
+                max = 970;
+                break;    
+        }
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
@@ -174,20 +245,14 @@ class MainScene extends Phaser.Scene {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
-    getCarriles(){
-        let min = 0;
-        let max = 1;
-        return Math.floor(Math.random() * (max - min + 1) + min);
-    }
-
     LeftVehicleLimit(limit, elem){
+        LeftVehicles.create(-100, LeftCarriles[elem.carril], 'cars', this.getCars(0 ,9)).setVelocityX(this.getVelocity()).setSize(135, 60, false).carril = elem.carril;
         elem.destroy();
-        let currentCar = LeftVehicles.create(-100, LeftCarriles[this.getCarriles()], 'cars', this.getCars(0 ,9)).setVelocityX(this.getVelocity()).setSize(135, 60, false);
     }
 
     RightVehicleLimit(limit, elem){
+        let currentCar = RightVehicles.create(900, RightCarriles[elem.carril], 'cars2', this.getCars(0 ,24)).setVelocityX(-this.getVelocity()).setSize(135, 60, true).setFlipX(true).carril = elem.carril;
         elem.destroy();
-        let currentCar = RightVehicles.create(900, RightCarriles[this.getCarriles()], 'cars2', this.getCars(0 ,24)).setVelocityX(-this.getVelocity()).setSize(135, 60, true).flipX = true;
     }
 
     update(){
@@ -236,6 +301,41 @@ class MainScene extends Phaser.Scene {
     }
 }
 
+class EndScene extends Phaser.Scene {
+    constructor (){
+        super('endScene');
+    }
+
+    preload(){ 
+        this.load.image('enbBack', './assets/img/background.jpg');
+        this.load.image('title', './assets/img/BunnyGame.png');
+        this.load.image('faceRabbit', './assets/img/faceRabbit.png');
+        this.load.image('carrot', './assets/img/carrot.png');
+    }
+
+    create(){
+        this.add.image(0, 0, 'enbBack').setScale(1.1, 2);
+        this.add.image(375, 90, 'title').setScale(1);
+        this.add.image(180, 400, 'faceRabbit').setScale(1);
+        this.add.image(480, 300, 'carrot').setScale(1);
+
+        this.add.text(520, 280, "= "+endScore ,{
+            fontFamily: 'Consolas, Georgia, "Goudy Bookletter 1911", Times, serif',
+            fontSize: 40, 
+            color: 'white'
+        });
+        
+        let backZone = this.add.zone(0, 0, 768, 672);
+        backZone.setOrigin(0);
+        backZone.setInteractive();
+        backZone.once('pointerdown', () => {
+            lives = 3;
+            countdown = 60;
+            this.scene.start("gameScene");
+        });
+    }
+}
+
 // Configuracion general
 const config = {
     // Phaser.AUTO, intenta usa WebGL y si el navegador no lo tiene, usa canva.
@@ -243,14 +343,14 @@ const config = {
     parent: 'game-container',
     width: 768,
     height: 672,
-    scene: [MainScene],
+    scene: [MainScene, EndScene],
     scale: {
         // mode: Phaser.Scale.FIT
     },
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true,
+            // debug: true,
             // gravity: { y: 350 }
         }
     }
